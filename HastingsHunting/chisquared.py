@@ -9,7 +9,7 @@ import os
 N = 500
 
 # the 2 authors we are comparing to the disputed author
-AUTHOR_1 = 'beha'
+AUTHOR_1 = 'anon'
 AUTHOR_2 = 'kama'
 
 # the disputed author

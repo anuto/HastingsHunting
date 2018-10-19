@@ -10,7 +10,7 @@ import os
 # True: we consider 'The' different from 'the'
 # False: we consider 'The' and 'the' the same word
 CASE_SENSITIVE = False
-DISPUTED = 'gehi'
+DISPUTED = 'anon'
 
 # If true, prints the 'word, count' of the top N words
 PRINT_TOP_N_WORDS = False
@@ -30,19 +30,20 @@ AUTHOR_CODE = {
 }
 ###################################################
 def main():
-	for N in range(1, 501, 50):
-		author_corps = get_author_corps()
+	# for N in range(1, 501, 50):
+	N = 200
+	author_corps = get_author_corps()
 
-		# to keep our records clean =)
-		print("deltas of distance to ", AUTHOR_CODE[DISPUTED])
-		print("N: ", N)
-		print("Case sensitive? ", CASE_SENSITIVE)
+	# to keep our records clean =)
+	print("deltas of distance to ", AUTHOR_CODE[DISPUTED])
+	print("N: ", N)
+	print("Case sensitive? ", CASE_SENSITIVE)
 
-		author_tokens = tokenize(author_corps)
-		disputed_tokens = author_tokens.pop(DISPUTED)
-		delta(N, author_tokens, disputed_tokens)
+	author_tokens = tokenize(author_corps)
+	disputed_tokens = author_tokens.pop(DISPUTED)
+	delta(N, author_tokens, disputed_tokens)
 
-		print()
+	print()
 
 def get_author_corps():
 	author_corps = {}
@@ -68,8 +69,7 @@ def tokenize(author_corps):
 		tokens = nltk.word_tokenize(author_corps[author])
 		# filter out tokens with no alphabetic characters
 		# a token is uninterrupted characters. Tokens are separated by whitespace.
-		author_tokens[author] = ([token for token in tokens 
-												if any(c.isalpha() for c in token)])
+		author_tokens[author] = ([token for token in tokens if any(c.isalpha() for c in token)])
 
 	if CASE_SENSITIVE:
 		# Lowercase the tokens so that the same word, capitalized or not, 
@@ -167,12 +167,34 @@ def delta(N, author_tokens, testcase_tokens):
 		testcase_zscores[feature] = (feature_val - feature_mean) / feature_stdev
 		# print("Test case z-score for feature", feature, "is", testcase_zscores[feature])
 
+	# # calculate delta
+	# for author in author_tokens:
+	# 	delta = 0
+	# 	for feature in features:
+	# 		delta += math.fabs((testcase_zscores[feature] - feature_zscores[author][feature]))
+	# 	delta /= len(features)
+	# 	print( "Delta score for candidate", AUTHOR_CODE[author], "is", delta )
+
+
+	# calculate cosine distance
 	for author in author_tokens:
-		delta = 0
+		numerator = 0
+		denominator_a = 0
+		denominator_b = 0
+		num_features = len(features)
 		for feature in features:
-			delta += math.fabs((testcase_zscores[feature] - feature_zscores[author][feature]))
-		delta /= len(features)
-		print( "Delta score for candidate", AUTHOR_CODE[author], "is", delta )
+			a_i = testcase_zscores[feature] 
+			b_i = feature_zscores[author][feature]
+			numerator += a_i * b_i
+			denominator_a += a_i ** 2
+			denominator_b += b_i ** 2
+		cosine_similarity = numerator / ((denominator_b ** (1/2)) * (denominator_a ** (1/2)))
+		print("cosine similarity for candidate ", AUTHOR_CODE[author], " is ", cosine_similarity)
+
+
+
+
+
 
 
 if __name__ == '__main__':
