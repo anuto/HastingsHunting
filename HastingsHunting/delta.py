@@ -7,9 +7,9 @@ import os
 ########## THINGS TO PLAY AROUND WITH ##########
 # using the top N most frequent words
 
-# True: we consider 'The' different from 'the'
-# False: we consider 'The' and 'the' the same word
-CASE_SENSITIVE = False
+# False: we consider 'The' different from 'the'
+# True: we consider 'The' and 'the' the same word
+CASE_INSENSITIVE = False
 DISPUTED = 'anon'
 
 # If true, prints the 'word, count' of the top N words
@@ -31,13 +31,13 @@ AUTHOR_CODE = {
 ###################################################
 def main():
 	# for N in range(1, 501, 50):
-	N = 200
+	N = 60
 	author_corps = get_author_corps()
 
 	# to keep our records clean =)
 	print("deltas of distance to ", AUTHOR_CODE[DISPUTED])
 	print("N: ", N)
-	print("Case sensitive? ", CASE_SENSITIVE)
+	print("Case sensitive? ", CASE_INSENSITIVE)
 
 	author_tokens = tokenize(author_corps)
 	disputed_tokens = author_tokens.pop(DISPUTED)
@@ -60,6 +60,8 @@ def get_author_corps():
 	for auth in author_corps:
 		author_corps[auth] = '\n'.join(author_corps[auth])
 
+	# TODO: take this out later, it's cutting out the disproportionate amount of orage
+	author_corps['alor'] = author_corps['alor'][:int((0.5* len(author_corps['alor'])))]
 	return author_corps	
 
 def tokenize(author_corps):
@@ -71,7 +73,7 @@ def tokenize(author_corps):
 		# a token is uninterrupted characters. Tokens are separated by whitespace.
 		author_tokens[author] = ([token for token in tokens if any(c.isalpha() for c in token)])
 
-	if CASE_SENSITIVE:
+	if CASE_INSENSITIVE:
 		# Lowercase the tokens so that the same word, capitalized or not, 
 		# counts as one word. Although, perhaps, using capitalization might give us other
 		# information!
@@ -92,9 +94,11 @@ def delta(N, author_tokens, testcase_tokens):
 
 	# print some info about how much the top N words show up
 	captured = 0
+	i = 1
 	for k, v in whole_corpus_freq_dist:
 		if PRINT_TOP_N_WORDS:
-			print(k, " ", v)
+			print(i, ": ", k, " ", v)
+			i += 1
 		captured += v
 	print("whole corpus: ", len(whole_corpus))
 	print("percentage captured: ", ((captured / len(whole_corpus)) * 100), "%")
@@ -167,15 +171,15 @@ def delta(N, author_tokens, testcase_tokens):
 		testcase_zscores[feature] = (feature_val - feature_mean) / feature_stdev
 		# print("Test case z-score for feature", feature, "is", testcase_zscores[feature])
 
-	# # calculate delta
-	# for author in author_tokens:
-	# 	delta = 0
-	# 	for feature in features:
-	# 		delta += math.fabs((testcase_zscores[feature] - feature_zscores[author][feature]))
-	# 	delta /= len(features)
-	# 	print( "Delta score for candidate", AUTHOR_CODE[author], "is", delta )
+	# calculate delta
+	for author in author_tokens:
+		delta = 0
+		for feature in features:
+			delta += math.fabs((testcase_zscores[feature] - feature_zscores[author][feature]))
+		delta /= len(features)
+		print( "Delta score for candidate", AUTHOR_CODE[author], "is", delta )
 
-
+	print()
 	# calculate cosine distance
 	for author in author_tokens:
 		numerator = 0
@@ -190,11 +194,6 @@ def delta(N, author_tokens, testcase_tokens):
 			denominator_b += b_i ** 2
 		cosine_similarity = numerator / ((denominator_b ** (1/2)) * (denominator_a ** (1/2)))
 		print("cosine similarity for candidate ", AUTHOR_CODE[author], " is ", cosine_similarity)
-
-
-
-
-
 
 
 if __name__ == '__main__':
